@@ -10,3 +10,6 @@
 /captures
 .externalNativeBuild
 .idea
+alarm.wav
+shape_predictor_68_face_landmarks.dat
+ngrok.exe
