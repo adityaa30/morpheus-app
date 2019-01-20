@@ -4,4 +4,6 @@
     <string name="music">Music</string>
     <string name="maps">Maps</string>
     <string name="diagnostics">Diagnostics</string>
+
+    <string name="exit">Exit</string>
 </resources>

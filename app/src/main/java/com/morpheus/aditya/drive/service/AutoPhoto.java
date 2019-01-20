@@ -3,49 +3,37 @@ package com.morpheus.aditya.drive.service;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
-import android.hardware.camera2.CameraAccessException;
-import android.hardware.camera2.CameraCaptureSession;
-import android.hardware.camera2.CameraCharacteristics;
-import android.hardware.camera2.CameraDevice;
-import android.hardware.camera2.CameraManager;
-import android.hardware.camera2.CaptureRequest;
-import android.hardware.camera2.TotalCaptureResult;
+import android.hardware.camera2.*;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
 import android.os.Build;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.util.Base64;
 import android.util.Log;
-import android.util.Size;
-import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.core.content.ContextCompat;
+import com.morpheus.aditya.drive.DriveUtils;
+import com.morpheus.aditya.drive.api.ApiService;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.schedulers.Schedulers;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
-import java.text.SimpleDateFormat;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Created by rajesh kumar sahanee on 2/9/17.
- */
-
 
 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-public class CameraControllerV2WithoutPreview {
+public class AutoPhoto {
 
-    Context context;
+    private Context context;
 
     private static final String TAG = "ccv2_without_preview";
 
@@ -56,12 +44,11 @@ public class CameraControllerV2WithoutPreview {
     private HandlerThread backgroundThread;
     private Handler backgroundHandler;
     private ImageReader imageReader;
-    private File file;
 
     private Semaphore mCameraOpenCloseLock = new Semaphore(1);
 
 
-    public CameraControllerV2WithoutPreview(Context context) {
+    public AutoPhoto(Context context) {
         this.context = context;
     }
 
@@ -92,7 +79,7 @@ public class CameraControllerV2WithoutPreview {
 
                 // We only use a front facing camera in this sample.
                 Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
-                if (facing != null && facing != CameraCharacteristics.LENS_FACING_FRONT) {
+                if (facing != null && facing == CameraCharacteristics.LENS_FACING_FRONT) {
                     continue;
                 }
 
@@ -102,8 +89,7 @@ public class CameraControllerV2WithoutPreview {
                 }
 
                 // For still image captures, we use the largest available size.
-                Size largest = Collections.max(Arrays.asList(map.getOutputSizes(ImageFormat.JPEG)), new CompareSizesByArea());
-                imageReader = ImageReader.newInstance(largest.getWidth(), largest.getHeight(), ImageFormat.JPEG, /*maxImages*/2);
+                imageReader = ImageReader.newInstance(DriveUtils.IMAGE_WIDTH, DriveUtils.IMAGE_HEIGHT, ImageFormat.JPEG, /*maxImages*/2);
                 imageReader.setOnImageAvailableListener(mOnImageAvailableListener, backgroundHandler);
 
                 mCameraId = cameraId;
@@ -152,7 +138,7 @@ public class CameraControllerV2WithoutPreview {
         @Override
         public void onImageAvailable(ImageReader reader) {
             Log.d(TAG, "ImageAvailable");
-            backgroundHandler.post(new ImageSaver(reader.acquireNextImage(), file));
+            backgroundHandler.post(new ImageSaver(reader.acquireNextImage()));
         }
 
     };
@@ -227,7 +213,6 @@ public class CameraControllerV2WithoutPreview {
     }
 
     public void takePicture() {
-        file = getOutputMediaFile();
         try {
             if (null == mCameraDevice) {
                 return;
@@ -237,13 +222,14 @@ public class CameraControllerV2WithoutPreview {
             captureBuilder.addTarget(imageReader.getSurface());
 
             // Use the same AE and AF modes as the preview.
-            captureBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+            captureBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+            captureBuilder.set(CaptureRequest.CONTROL_AWB_MODE, CaptureRequest.CONTROL_AWB_MODE_AUTO);
 
             CameraCaptureSession.CaptureCallback captureCallback = new CameraCaptureSession.CaptureCallback() {
 
                 @Override
                 public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
-                    Log.d(TAG, file.toString());
+                    Log.d(TAG, "takePicture() : onCaptureComplete()");
                 }
             };
 
@@ -252,7 +238,6 @@ public class CameraControllerV2WithoutPreview {
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
-        Toast.makeText(context, file.getAbsolutePath(), Toast.LENGTH_SHORT).show();
     }
 
     private static class ImageSaver implements Runnable {
@@ -261,14 +246,9 @@ public class CameraControllerV2WithoutPreview {
          * The JPEG image
          */
         private final Image mImage;
-        /**
-         * The file we save the image into.
-         */
-        private final File mFile;
 
-        public ImageSaver(Image image, File file) {
+        public ImageSaver(Image image) {
             mImage = image;
-            mFile = file;
         }
 
         @Override
@@ -276,59 +256,26 @@ public class CameraControllerV2WithoutPreview {
             ByteBuffer buffer = mImage.getPlanes()[0].getBuffer();
             byte[] bytes = new byte[buffer.remaining()];
             buffer.get(bytes);
-            FileOutputStream output = null;
+            String encodedString = Base64.encodeToString(bytes, Base64.DEFAULT);
             try {
-                output = new FileOutputStream(mFile);
-                output.write(bytes);
-            } catch (IOException e) {
+                ApiService
+                        .getService()
+                        .updateData(encodedString)
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .observeOn(Schedulers.io())
+                        .subscribe(
+                                dataResponseResponse -> {
+                                    Log.v(TAG, "response : " + dataResponseResponse.toString());
+                                },
+                                throwable -> Log.v(TAG, throwable.toString())
+                        );
+            } catch (Exception e) {
                 e.printStackTrace();
             } finally {
                 mImage.close();
-                if (null != output) {
-                    try {
-                        output.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
             }
         }
 
-    }
-
-    static class CompareSizesByArea implements Comparator<Size> {
-
-        @Override
-        public int compare(Size lhs, Size rhs) {
-            // We cast here to ensure the multiplications won't overflow
-            return Long.signum((long) lhs.getWidth() * lhs.getHeight() - (long) rhs.getWidth() * rhs.getHeight());
-        }
-
-    }
-
-    private File getOutputMediaFile() {
-        // To be safe, you should check that the SDCard is mounted
-        // using Environment.getExternalStorageState() before doing this.
-
-        File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "Camera2Test");
-
-        // This location works best if you want the created images to be shared
-        // between applications and persist after your app has been uninstalled.
-
-        // Create the storage directory if it does not exist
-        if (!mediaStorageDir.exists()) {
-            if (!mediaStorageDir.mkdirs()) {
-                return null;
-            }
-        }
-
-        // Create a media file name
-        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-
-        File mediaFile;
-        mediaFile = new File(mediaStorageDir.getPath() + File.separator + "IMG_" + timeStamp + ".jpg");
-
-        return mediaFile;
     }
 
 }

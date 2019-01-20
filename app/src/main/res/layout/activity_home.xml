@@ -2,37 +2,116 @@
 <RelativeLayout
         xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:app="http://schemas.android.com/apk/res-auto"
-        android:layout_width="match_parent" android:layout_height="match_parent">
+        android:id="@+id/home_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/background_gradient"
+        android:animateLayoutChanges="true">
 
+
+    <TextView
+            android:id="@+id/home_message"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="30dp"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="20dp"
+            android:animateLayoutChanges="true"
+            android:textSize="64sp"
+            android:textColor="@android:color/white"
+            android:textStyle="bold"
+            android:fontFamily="@font/indie_flower"/>
 
     <com.google.android.material.card.MaterialCardView
             android:id="@+id/home_alert_materialCard"
-            android:layout_width="140dp"
-            android:layout_height="140dp"
-            app:cardCornerRadius="70dp"
-            android:layout_centerInParent="true"
-            app:strokeWidth="1dp"
-            app:strokeColor="@color/colorPrimary"
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            app:cardCornerRadius="60dp"
+            app:cardElevation="4dp"
             android:clickable="true"
             android:focusable="true"
-            android:animateLayoutChanges="true">
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="100dp"
+            android:stateListAnimator="@animator/card_elevation">
 
         <ImageView
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:src="@drawable/ic_drive_eta"
-                android:layout_margin="32dp"/>
+                android:src="@drawable/home_alert"
+                android:layout_margin="40dp"/>
 
     </com.google.android.material.card.MaterialCardView>
 
-
-    <com.google.android.material.bottomnavigation.BottomNavigationView
-            android:id="@+id/home_bottomNavigation"
+    <com.hanks.htextview.scale.ScaleTextView
+            android:id="@+id/home_attention_level"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:text=" Attention level"
+            android:textStyle="bold"
+            android:textSize="26sp"
+            android:textColor="@android:color/white"
+            android:layout_margin="4dp"
+            android:fontFamily="@font/indie_flower"
+            android:layout_above="@id/home_lineChart"/>
+
+    <com.github.mikephil.charting.charts.LineChart
+            android:id="@+id/home_lineChart"
+            android:layout_width="match_parent"
+            android:layout_height="250dp"
+            android:layout_above="@id/home_button_container"/>
+
+    <LinearLayout
+            android:id="@+id/home_button_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
             android:layout_alignParentBottom="true"
-            app:itemIconTint="@drawable/bottom_navigation_colors"
-            app:itemTextColor="@drawable/bottom_navigation_colors"
-            app:menu="@menu/home"
-            android:animateLayoutChanges="true"/>
+            android:layout_marginBottom="8dp"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp">
+
+
+        <com.google.android.material.button.MaterialButton
+                style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
+                android:id="@+id/home_music_materialButton"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:layout_height="wrap_content"
+                android:text="Music"
+                android:textStyle="bold|italic"
+                android:textSize="18sp"
+                android:fontFamily="@font/shadow_into_light"
+                android:textAllCaps="false"
+                android:textColor="@color/colorPrimaryDark"
+                android:backgroundTint="@android:color/white"
+                android:layout_gravity="center"
+                app:strokeColor="@color/colorPrimaryDark"
+                app:icon="@drawable/ic_music_note_black_24dp"
+                app:strokeWidth="1dp"
+                app:cornerRadius="16dp"/>
+
+        <com.google.android.material.button.MaterialButton
+                style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
+                android:id="@+id/home_maps_materialButton"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:layout_height="wrap_content"
+                android:text="Maps"
+                android:textStyle="bold|italic"
+                android:textSize="18sp"
+                android:fontFamily="@font/shadow_into_light"
+                android:textAllCaps="false"
+                android:textColor="@color/colorPrimaryDark"
+                android:backgroundTint="@android:color/white"
+                android:layout_gravity="center"
+                app:icon="@drawable/ic_add_location_black_24dp"
+                app:strokeColor="@color/colorPrimaryDark"
+                app:strokeWidth="1dp"
+                app:cornerRadius="16dp"/>
+
+    </LinearLayout>
 </RelativeLayout>

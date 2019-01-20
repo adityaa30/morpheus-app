@@ -5,7 +5,13 @@ import android.app.NotificationManager
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.Animation
+import android.view.animation.AnimationSet
+import android.view.animation.TranslateAnimation
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import com.morpheus.aditya.drive.home.HomeActivity
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
@@ -15,6 +21,7 @@ import java.util.concurrent.TimeUnit
 class SplashActivity : AppCompatActivity() {
 
     private val mCompositeDisposable = CompositeDisposable()
+    private lateinit var mLogo: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -25,16 +32,37 @@ class SplashActivity : AppCompatActivity() {
 
         mCompositeDisposable.add(
             Observable
-                .timer(2, TimeUnit.SECONDS)
+                .timer(1000, TimeUnit.MILLISECONDS)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeOn(Schedulers.io())
                 .subscribe {
                     Intent(this@SplashActivity, HomeActivity::class.java).apply {
                         startActivity(this)
+                        finish()
                     }
                 }
         )
+        mLogo = findViewById(R.id.splash_logo)
+        mLogo.startAnimation(getAnimatorSet())
+    }
 
+    fun getAnimatorSet(): AnimationSet {
+        val animationSet = AnimationSet(false)
+
+        val translateAnimationToRight = TranslateAnimation(
+            Animation.RELATIVE_TO_PARENT, -1f,
+            Animation.RELATIVE_TO_SELF, 0f,
+            Animation.RELATIVE_TO_SELF, 0f,
+            Animation.RELATIVE_TO_SELF, 0f
+        )
+        translateAnimationToRight.interpolator = AccelerateDecelerateInterpolator()
+        translateAnimationToRight.duration = 600
+        translateAnimationToRight.fillAfter = true
+
+
+        animationSet.addAnimation(translateAnimationToRight)
+        animationSet.fillAfter = true
+        return animationSet
     }
 
     private fun createNotificationChannel() {
