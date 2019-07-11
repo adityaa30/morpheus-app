@@ -12,9 +12,9 @@ object DriveUtils {
 
     const val SERVER_PORT = 8080
     const val SERVER_IP = "127.ngrok.io"
-    const val API_URL = "http://192.168.43.183:8000/api/"
+    const val API_URL = "http://192.168.43.62:8000/api/"
 
-    const val PHOTO_UPLOAD_INTERVAL_TIME = 200L
+    const val PHOTO_UPLOAD_INTERVAL_TIME = 1000L
 
     const val RECEIVER_INTENT_URI = "com.morpheus.aditya.drive.STOP_ALERT"
     const val STOP_INTENT_EXTRA = "stop_intent_extra"

@@ -84,7 +84,7 @@ class AlertService : Service() {
             stopForeground(true)
         } else {
             startForeground(DriveUtils.NOTIFICATION_ID_ALERT, notification)
-//            startCapturingImages()
+            startCapturingImages()
         }
 
     }
@@ -92,7 +92,7 @@ class AlertService : Service() {
     private fun startCapturingImages() {
         cameraController?.openCamera()
         try {
-            Thread.sleep(1000)
+            Thread.sleep(100)
         } catch (e: InterruptedException) {
             Log.v(TAG, e.toString())
         }
